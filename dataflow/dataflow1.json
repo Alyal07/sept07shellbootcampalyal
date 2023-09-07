@@ -1,0 +1,81 @@
+{
+	"name": "dataflow1",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "DS_IP",
+						"type": "DatasetReference"
+					},
+					"name": "moviedatasource"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "DS_OP",
+						"type": "DatasetReference"
+					},
+					"name": "MoviesDataSink"
+				}
+			],
+			"transformations": [
+				{
+					"name": "Year2007to2009",
+					"description": "Add expression for the filter"
+				},
+				{
+					"name": "ComedyRomance"
+				},
+				{
+					"name": "RottenTomatoes75"
+				},
+				{
+					"name": "select1"
+				},
+				{
+					"name": "AnimationDrama"
+				},
+				{
+					"name": "union1"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          Film as string,",
+				"          Genre as string,",
+				"          {Lead Studio} as string,",
+				"          {Audience score %} as string,",
+				"          Profitability as string,",
+				"          {Rotten Tomatoes %} as string,",
+				"          {Worldwide Gross} as string,",
+				"          Year as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> moviedatasource",
+				"moviedatasource filter(toInteger(Year) >= 2007 && toInteger(Year)<=2009) ~> Year2007to2009",
+				"Year2007to2009 filter(in(array('Romance','Comedy'), Genre)) ~> ComedyRomance",
+				"ComedyRomance filter(toInteger({Rotten Tomatoes %}) >= 75) ~> RottenTomatoes75",
+				"union1 select(mapColumn(",
+				"          Film,",
+				"          Genre,",
+				"          Year",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> select1",
+				"moviedatasource filter(in(array('Animation','Drama'), Genre)) ~> AnimationDrama",
+				"AnimationDrama, RottenTomatoes75 union(byName: true)~> union1",
+				"select1 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     umask: 0022,",
+				"     preCommands: [],",
+				"     postCommands: [],",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> MoviesDataSink"
+			]
+		}
+	}
+}
