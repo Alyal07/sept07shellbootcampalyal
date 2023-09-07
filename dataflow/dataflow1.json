@@ -40,6 +40,9 @@
 				},
 				{
 					"name": "union1"
+				},
+				{
+					"name": "CriticScore"
 				}
 			],
 			"scriptLines": [
@@ -59,7 +62,7 @@
 				"moviedatasource filter(toInteger(Year) >= 2007 && toInteger(Year)<=2009) ~> Year2007to2009",
 				"Year2007to2009 filter(in(array('Romance','Comedy'), Genre)) ~> ComedyRomance",
 				"ComedyRomance filter(toInteger({Rotten Tomatoes %}) >= 75) ~> RottenTomatoes75",
-				"union1 select(mapColumn(",
+				"CriticScore select(mapColumn(",
 				"          Film,",
 				"          Genre,",
 				"          Year",
@@ -68,6 +71,10 @@
 				"     skipDuplicateMapOutputs: true) ~> select1",
 				"moviedatasource filter(in(array('Animation','Drama'), Genre)) ~> AnimationDrama",
 				"AnimationDrama, RottenTomatoes75 union(byName: true)~> union1",
+				"union1 derive(CriticScore = iif(toInteger({Rotten Tomatoes %})>90, 'Critically acclaimed',\r",
+				" iff(toInteger({Rotten Tomatoes %})>90,'Moderately acclaimed','Thanda'))\r",
+				" \r",
+				") ~> CriticScore",
 				"select1 sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     umask: 0022,",
